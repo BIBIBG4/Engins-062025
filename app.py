@@ -9,6 +9,11 @@ app = Flask(__name__)
 app.secret_key = "votre_clé_secrète"  # Change cette clé pour la sécurité
 
 init_db()         # initialise la base au lancement
+init_routes(app)  # enregistre les routes
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
 
 def create_default_admin():
     admin_username = "admin"
@@ -16,7 +21,7 @@ def create_default_admin():
     admin_role = "admin"
 
     # Connexion à la base (adapter si tu as un autre chemin)
-    conn = sqlite3.connect('database.db')  # adapte le chemin selon ta config
+    conn = sqlite3.connect('messages.db')  # adapte le chemin selon ta config
     cursor = conn.cursor()
 
     # Vérifier si l'admin existe déjà
@@ -35,9 +40,3 @@ def create_default_admin():
     conn.close()
 
 create_default_admin()
-
-init_routes(app)  # enregistre les routes
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
