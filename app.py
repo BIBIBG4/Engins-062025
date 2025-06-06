@@ -9,11 +9,6 @@ app = Flask(__name__)
 app.secret_key = "votre_clé_secrète"  # Change cette clé pour la sécurité
 
 init_db()         # initialise la base au lancement
-init_routes(app)  # enregistre les routes
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
 
 def create_default_admin():
     admin_username = "admin"
@@ -40,3 +35,11 @@ def create_default_admin():
     conn.close()
 
 create_default_admin()
+
+init_routes(app)  # enregistre les routes
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
+
+
