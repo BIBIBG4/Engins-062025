@@ -1,0 +1,41 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+    <meta charset="UTF-8">
+    <title>{{ title or "Application" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>{{ title or "Application" }}</h1>
+        <div style="position: absolute; right: 10px; font-size: 0.9em;">
+        {% if session.get('username') %}
+            {{ session['username'] }} ({{ session['role'] }})
+        {% endif %}
+    </div>
+    </header>
+
+    <div id="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <footer style="background-color:#f0f0f0; padding: 15px; margin-top: 30px; text-align: center; border-top: 1px solid #ccc;">
+        <nav>
+            {% set current = request.endpoint %}
+            {% if current != 'chat' %}
+                <a href="{{ url_for('chat') }}" style="margin: 0 10px;">Messagerie</a> |
+            {% endif %}
+            {% if current != 'manage_channels' %}
+                <a href="{{ url_for('manage_channels') }}" style="margin: 0 10px;">Tableau</a> |
+            {% endif %}
+            {% if session.get('role') == 'admin' %}
+                {% if current != 'user_management' %}
+                    <a href="{{ url_for('gestion_utilisateurs') }}" style="margin: 0 10px;">Utilisateurs</a> |
+                {% endif %}
+            {% endif %}
+            <a href="{{ url_for('logout') }}" style="margin: 0 10px;">Logout</a>
+        </nav>
+    </footer>
+</body>
+</html>

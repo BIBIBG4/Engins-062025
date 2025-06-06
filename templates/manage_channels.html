@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+
+        form input[type="text"], form button {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .channel {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            word-wrap: break-word;
+        }
+
+        .status-oper {
+            color: green;
+        }
+
+        .status-casse {
+            color: red;
+        }
+
+        .title-oper {
+            background-color: #d4edda;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .title-casse {
+            background-color: #f8d7da;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .message-preview {
+            display: inline-block;
+            max-width: calc(100% - 250px);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                margin: 10px;
+                font-size: 14px;
+            }
+
+            .channel {
+                font-size: 14px;
+            }
+
+            form input, form button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <br>
+    {% if session.get('role') == 'admin' %}
+    <form method="POST">
+        <input type="text" name="channel_name" placeholder="Nom machine" required>
+        <button type="submit" name="action" value="add">➕ Ajouter</button>
+    </form>
+    {% endif %}
+
+    <ul>
+    {% for channel in channels %}
+        <li class="channel">
+            <strong>
+                <a href="/canal/{{ channel['name'] }}"
+                   class="{% if channel.get('last_status') == 'opérationnel' %}title-oper{% else %}title-casse{% endif %}">
+                   {{ channel['name'] }}
+                </a>
+            </strong> -
+            <span class="{{ 'status-oper' if channel.get('last_status') == 'opérationnel' else 'status-casse' }}">
+                {{ channel.get('last_status', 'Aucun') }}
+            </span>
+            </strong> -
+            <span class="message-preview">
+                {{ channel.get('last_message', 'Aucun') }}
+            </span>
+            
+            {% if session.get('role') == 'admin' %}
+            <form method="POST" style="display:inline;">
+                <input type="hidden" name="channel_name" value="{{ channel['name'] }}">
+                <button type="submit" name="action" value="delete">🗑️ Supprimer</button>
+            </form>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+{% endblock %}

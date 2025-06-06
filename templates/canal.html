@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .form-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .message {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin: 10px auto;
+        border-radius: 8px;
+        max-width: 700px;
+        background: white;
+    }
+
+    .message .header {
+        font-weight: bold;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .status {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        margin-left: 8px;
+        display: inline-block;
+        text-transform: capitalize;
+    }
+
+    .status.opérationnel {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status.cassé {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .status.dégradé {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .timestamp {
+        font-size: 0.85em;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+        .form-container,
+        .message {
+            margin: 0 10px;
+        }
+    }
+</style>
+
+<div class="form-container">
+    <form method="POST">
+        <label for="status">Statut :</label>
+        <select id="status" name="status" required>
+            <option value="opérationnel">✅ Opérationnel</option>
+            <option value="dégradé">⚠️ Dégradé</option>
+            <option value="cassé">❌ Cassé</option>
+        </select>
+
+        <label for="message">Message :</label>
+        <textarea id="message" name="message" required></textarea>
+
+        <button type="submit">Envoyer</button>
+    </form>
+</div>
+
+<h2>Messages du canal</h2>
+
+{% for msg in messages %}
+    <div class="message">
+        <div class="header">
+            {{ msg[0] }}
+            <span class="status {{ msg[1]|lower }}">{{ msg[1] }}</span>
+            <span class="timestamp">{{ msg[4] }}</span>
+        </div>
+        <div>{{ msg[2] }}</div>
+    </div>
+{% else %}
+    <p style="text-align:center;">Aucun message pour ce canal.</p>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px auto;
+            padding: 20px;
+            max-width: 500px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            margin-top: 20px;
+            color: red;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                margin: 20px;
+                font-size: 16px;
+            }
+
+            input,
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+{% extends "base.html" %}
+{% block content %}
+<body>
+    <h2>Connexion</h2>
+    <form method="POST">
+        <label>Nom d'utilisateur :</label>
+        <input type="text" name="username" required>
+        
+        <label>Mot de passe :</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Connexion</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+</body>
+{% endblock %}
+</html>
