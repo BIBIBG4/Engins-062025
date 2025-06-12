@@ -23,7 +23,7 @@ def init_routes(app, socketio):
             if action == "delete" and session.get("role") == "admin":
                 message_id = request.form.get("message_id")
                 if message_id:
-                    c.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+                    c.execute("DELETE FROM messages WHERE id = %s", (message_id,))
                     conn.commit()
 
             # ➕ Ajout d’un message
@@ -34,7 +34,7 @@ def init_routes(app, socketio):
                 machine = request.form["machine"]
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (?, ?, ?, ?, ?)",
+                c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (%s, %s, %s, %s, %s)",
                         (username, status, message, machine, timestamp))
                 conn.commit()
 
@@ -48,7 +48,7 @@ def init_routes(app, socketio):
         params = []
 
         if utilisateur:
-            query += " AND username = ?"
+            query += " AND username = %s"
             params.append(utilisateur)
 
         if recent == "1":
@@ -92,18 +92,18 @@ def init_routes(app, socketio):
             action = request.form["action"]
             if action == "add":
                 try:
-                    c.execute("INSERT INTO channels (name) VALUES (?)", (name,))
+                    c.execute("INSERT INTO channels (name) VALUES (%s)", (name,))
                 except Exception:
                     pass
             elif action == "delete":
-                c.execute("DELETE FROM channels WHERE name = ?", (name,))
+                c.execute("DELETE FROM channels WHERE name = %s", (name,))
             conn.commit()
 
         c.execute("SELECT name FROM channels ORDER BY name ASC")
         channel_names = [row["name"] for row in c.fetchall()]
         channels = []
         for name in channel_names:
-            c.execute("SELECT message, status FROM messages WHERE machine LIKE ? ORDER BY id DESC LIMIT 1", (name,))
+            c.execute("SELECT message, status FROM messages WHERE machine LIKE %s ORDER BY id DESC LIMIT 1", (name,))
             result = c.fetchone()
             last_message = result["message"] if result else None
             last_status = result["status"] if result else None
@@ -126,7 +126,7 @@ def init_routes(app, socketio):
 
             conn = get_db_connection()
             c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (?, ?, ?, ?, ?)",
+            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (%s, %s, %s, %s, %s)",
                       (username, status, message, machine, timestamp))
             conn.commit()
             conn.close()
@@ -134,7 +134,7 @@ def init_routes(app, socketio):
 
         conn = get_db_connection()
         c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        c.execute("SELECT username, status, message, machine, timestamp FROM messages WHERE machine LIKE ? ORDER BY id DESC", (nom,))
+        c.execute("SELECT username, status, message, machine, timestamp FROM messages WHERE machine LIKE %s ORDER BY id DESC", (nom,))
         messages = c.fetchall()
         conn.close()
         return render_template("canal.html", canal=nom, messages=messages, title = nom)
@@ -147,7 +147,7 @@ def init_routes(app, socketio):
 
             conn = get_db_connection()
             c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            c.execute("SELECT password, role FROM users WHERE username = ?", (username,))
+            c.execute("SELECT password, role FROM users WHERE username = %s", (username,))
             result = c.fetchone()
 
             if result and check_password_hash(result[0], password):
@@ -183,7 +183,7 @@ def init_routes(app, socketio):
                 hashed_password = generate_password_hash(password)
                 role = request.form.get("role", "user")
                 try:
-                    c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, hashed_password, role))
+                    c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
                     conn.commit()
                     flash("Utilisateur ajouté", "success")
                 except Exception as e:
@@ -191,7 +191,7 @@ def init_routes(app, socketio):
                     flash("Nom d'utilisateur déjà utilisé", "error")
             elif action == "delete":
                 username = request.form["username"]
-                c.execute("DELETE FROM users WHERE username = ?", (username,))
+                c.execute("DELETE FROM users WHERE username = %s", (username,))
                 conn.commit()
                 flash(f"Utilisateur {username} supprimé", "success")
 
