@@ -1,9 +1,9 @@
 from flask import render_template, request, redirect, url_for, session, flash
 from db import get_db_connection
 from datetime import datetime, timedelta
-import sqlite3
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_socketio import emit
+import psycopg2
 
 def init_routes(app, socketio):
 
@@ -123,17 +123,17 @@ def init_routes(app, socketio):
             username = request.form["username"]
             password = request.form["password"]
 
-            with sqlite3.connect("messages.db") as conn:
-                c = conn.cursor()
-                c.execute("SELECT password, role FROM users WHERE username = %s", (username,))
-                result = c.fetchone()
+            conn = get_db_connection()
+            c = conn.cursor()
+            c.execute("SELECT password, role FROM users WHERE username = %s", (username,))
+            result = c.fetchone()
 
-                if result and check_password_hash(result[0], password):
-                    session["username"] = username
-                    session["role"] = result[1]
-                    return redirect("/")
-                else:
-                    flash("Nom d'utilisateur ou mot de passe incorrect")
+            if result and check_password_hash(result[0], password):
+                session["username"] = username
+                session["role"] = result[1]
+                return redirect("/")
+            else:
+                flash("Nom d'utilisateur ou mot de passe incorrect")
         
         return render_template("login.html", title = "Login")
 
@@ -145,36 +145,37 @@ def init_routes(app, socketio):
 
     @app.route("/utilisateurs", methods=["GET", "POST"])
     def gestion_utilisateurs():
-        with sqlite3.connect("messages.db") as conn:
-            if "username" not in session:
-                return redirect(url_for("login"))
-            
-            c = conn.cursor()
-            c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT)")
-            
-            # Ajouter un utilisateur
-            if request.method == "POST":
-                action = request.form.get("action")
-                if action == "add":
-                    username = request.form["username"]
-                    password = request.form["password"]
-                    hashed_password = generate_password_hash(password)
-                    role = request.form.get("role", "user")
-                    try:
-                        c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
-                        conn.commit()
-                        flash("Utilisateur ajouté", "success")
-                    except sqlite3.IntegrityError:
-                        flash("Nom d'utilisateur déjà utilisé", "error")
-                elif action == "delete":
-                    username = request.form["username"]
-                    c.execute("DELETE FROM users WHERE username = %s", (username,))
+        if "username" not in session:
+            return redirect(url_for("login"))
+        
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT)")
+        
+        # Ajouter un utilisateur
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "add":
+                username = request.form["username"]
+                password = request.form["password"]
+                hashed_password = generate_password_hash(password)
+                role = request.form.get("role", "user")
+                try:
+                    c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
                     conn.commit()
-                    flash(f"Utilisateur {username} supprimé", "success")
+                    flash("Utilisateur ajouté", "success")
+                except Exception as e:
+                    conn.rollback()
+                    flash("Nom d'utilisateur déjà utilisé", "error")
+            elif action == "delete":
+                username = request.form["username"]
+                c.execute("DELETE FROM users WHERE username = %s", (username,))
+                conn.commit()
+                flash(f"Utilisateur {username} supprimé", "success")
 
-            # Affichage des utilisateurs
-            c.execute("SELECT username, password, role FROM users")
-            utilisateurs = c.fetchall()
+        # Affichage des utilisateurs
+        c.execute("SELECT username, password, role FROM users")
+        utilisateurs = c.fetchall()
 
         return render_template("utilisateurs.html", utilisateurs=utilisateurs, title = "Utilisateurs")
     
