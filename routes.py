@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_socketio import emit
 import psycopg2
+import psycopg2.extras
 
 def init_routes(app, socketio):
 
@@ -25,8 +26,7 @@ def init_routes(app, socketio):
             conn.commit()
             conn.close()
             return redirect("/")
-        
-        
+
         utilisateur = request.args.get('utilisateur')
         recent = request.args.get('recent')
 
@@ -38,12 +38,12 @@ def init_routes(app, socketio):
             params.append(utilisateur)
 
         if recent == "1":
-            query += " AND timestamp >= datetime('now', '-1 day')"
+            query += " AND timestamp >= NOW() - INTERVAL '1 day'"
 
         query += " ORDER BY id DESC"
 
         conn = get_db_connection()
-        c = conn.cursor()
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         c.execute(query, params)
         messages = c.fetchall()
 
@@ -54,17 +54,14 @@ def init_routes(app, socketio):
         users = [row["username"] for row in c.fetchall()]
         conn.close()
 
-        
-
-        return render_template("chat.html", messages=messages, machines=machines, users= users, title="Messagerie")
-
+        return render_template("chat.html", messages=messages, machines=machines, users=users, title="Messagerie")
 
     @app.route("/canaux", methods=["GET", "POST"])
     def manage_channels():
         if "username" not in session:
             return redirect("/login")
         conn = get_db_connection()
-        c = conn.cursor()
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         if request.method == "POST":
             name = request.form["channel_name"]
             action = request.form["action"]
@@ -88,8 +85,7 @@ def init_routes(app, socketio):
             channels.append({"name": name, "last_status": last_status, "last_message": last_message})
         conn.close()
 
-        return render_template("manage_channels.html", channels=channels, title = "Tableau de bord")
-
+        return render_template("manage_channels.html", channels=channels, title="Tableau de bord")
 
     @app.route("/canal/<nom>", methods=["GET", "POST"])
     def canal_messages(nom):
@@ -111,12 +107,12 @@ def init_routes(app, socketio):
             return redirect(url_for("canal_messages", nom=nom))
 
         conn = get_db_connection()
-        c = conn.cursor()
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         c.execute("SELECT username, status, message, machine, timestamp FROM messages WHERE machine LIKE %s ORDER BY id DESC", (nom,))
         messages = c.fetchall()
         conn.close()
-        return render_template("canal.html", canal=nom, messages=messages, title = nom)
-    
+        return render_template("canal.html", canal=nom, messages=messages, title=nom)
+
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if request.method == "POST":
@@ -134,25 +130,22 @@ def init_routes(app, socketio):
                 return redirect("/")
             else:
                 flash("Nom d'utilisateur ou mot de passe incorrect")
-        
-        return render_template("login.html", title = "Login")
+
+        return render_template("login.html", title="Login")
 
     @app.route("/logout")
     def logout():
         session.pop("username", None)
         return redirect("/login")
-       
 
     @app.route("/utilisateurs", methods=["GET", "POST"])
     def gestion_utilisateurs():
         if "username" not in session:
             return redirect(url_for("login"))
-        
+
         conn = get_db_connection()
-        c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT)")
-        
-        # Ajouter un utilisateur
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
         if request.method == "POST":
             action = request.form.get("action")
             if action == "add":
@@ -173,12 +166,10 @@ def init_routes(app, socketio):
                 conn.commit()
                 flash(f"Utilisateur {username} supprimé", "success")
 
-        # Affichage des utilisateurs
         c.execute("SELECT username, password, role FROM users")
         utilisateurs = c.fetchall()
 
-        return render_template("utilisateurs.html", utilisateurs=utilisateurs, title = "Utilisateurs")
-    
+        return render_template("utilisateurs.html", utilisateurs=utilisateurs, title="Utilisateurs")
 
     @socketio.on('new_message')
     def handle_new_message(data):

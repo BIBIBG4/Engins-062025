@@ -37,13 +37,14 @@
 
 import psycopg2
 import os
+import psycopg2.extras
 
 def get_db_connection():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     return conn
 
 def init_db():
-    conn = get_db_connection()
+    conn = psycopg2.connect(os.environ['DATABASE_URL'], cursor_factory=psycopg2.extras.DictCursor)
     cur = conn.cursor()
 
     # Table des utilisateurs
