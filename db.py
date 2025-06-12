@@ -42,3 +42,40 @@ def get_db_connection():
     conn = psycopg2.connect(os.environ['DATABASE_URL'])
     return conn
 
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Table des utilisateurs
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL
+        );
+    """)
+
+    # Table des messages
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id SERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            status TEXT,
+            message TEXT,
+            machine TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    # Table des machines (canaux)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS channels (
+            id SERIAL PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL
+        );
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
