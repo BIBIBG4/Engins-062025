@@ -125,18 +125,20 @@
 </div>
 
 <h2>Messages du canal</h2>
-
-{% for msg in messages %}
-    <div class="message">
-        <div class="header">
-            {{ msg[0] }}
-            <span class="status {{ msg[1]|lower }}">{{ msg[1] }}</span>
-            <span class="timestamp">{{ msg[4] }}</span>
+<div id="chat"></div>
+    {% for msg in messages %}
+        <div class="message">
+            <div class="header">
+                {{ msg[0] }}
+                <span class="status {{ msg[1]|lower }}">{{ msg[1] }}</span>
+                <span class="timestamp">{{ msg[4] }}</span>
+            </div>
+            <div>{{ msg[2] }}</div>
         </div>
-        <div>{{ msg[2] }}</div>
+    {% else %}
+        <p style="text-align:center;">Aucun message pour ce canal.</p>
+    {% endfor %}
     </div>
-{% else %}
-    <p style="text-align:center;">Aucun message pour ce canal.</p>
-{% endfor %}
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
 {% endblock %}

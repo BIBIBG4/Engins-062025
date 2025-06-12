@@ -1,14 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from routes import init_routes
-from db import init_db
+from flask_socketio import SocketIO
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
 import os
+import sqlite3
+from db import init_db
 
-app = Flask(__name__)
-app.secret_key = "votre_clé_secrète"  # Change cette clé pour la sécurité
+socketio = SocketIO()
 
-init_db()         # initialise la base au lancement
+
+
 
 def create_default_admin():
     admin_username = "admin"
@@ -31,15 +31,24 @@ def create_default_admin():
         print("Utilisateur admin par défaut créé")
     else:
         print("Utilisateur admin déjà existant")
-
     conn.close()
 
-create_default_admin()
 
-init_routes(app)  # enregistre les routes
+def create_app():
+    app = Flask(__name__)
+    app.secret_key = "votre_clé_secrète"  # Change cette clé pour la sécurité
+
+    init_db()         # initialise la base au lancement
+    create_default_admin()
+    from routes import init_routes
+    init_routes(app, socketio)  # enregistre les routes
+    socketio.init_app(app)
+    return app
+
+app = create_app()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 5050))
+    socketio.run(app, host="0.0.0.0", port=port, debug=True)
 
 

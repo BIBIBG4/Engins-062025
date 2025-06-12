@@ -55,10 +55,37 @@
         font-weight: bold;
     }
 
+    .statut-degrade {
+        color: rgb(255, 115, 0);
+        font-weight: bold;
+    }
+
     .statut-casse {
         color: red;
         font-weight: bold;
     }
+
+    .filtres-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 20px auto;
+        max-width: 600px;
+    }
+
+    .filtres-container label {
+        font-weight: normal;
+        margin-right: 5px;
+    }
+
+    .filtres-container select,
+    .filtres-container input[type="checkbox"] {
+        padding: 5px;
+        font-size: 1em;
+    }
+
 
     @media (max-width: 768px) {
         .form-container {
@@ -73,33 +100,74 @@
 
 <div class="form-container">
     <form method="POST">
-        <label for="machine">Machine :</label>
+        <!-- Machine -->
+        <label for="machine"></label>
         <select name="machine" id="machine" required>
+            <option value="" disabled selected hidden style="color: #aaa; font-style: italic;">Machine</option>
             {% for m in machines %}
                 <option value="{{ m }}">{{ m }}</option>
             {% endfor %}
         </select>
 
-        <label for="status">Statut :</label>
-        <select name="status" id="status">
+        <!-- Statut -->
+        <label for="status"></label>
+        <select name="status" id="status" required>
+            <option value="" disabled selected hidden style="color: #aaa; font-style: italic;">Statut</option>
             <option value="opérationnel">✅ Opérationnel</option>
+            <option value="dégradé">⚠️ Dégradé</option>
             <option value="cassé">❌ Cassé</option>
         </select>
 
-        <label for="message">Message :</label>
-        <input type="text" name="message" id="message" required>
+        <!-- Message -->
+        <label for="message"></label>
+        <input type="text" name="message" id="message" placeholder="Message"
+            style="font-style: italic; color: #aaa;" 
+            onfocus="this.style.color='#000'; this.style.fontStyle='normal';" 
+            onblur="if(this.value==''){this.style.color='#aaa'; this.style.fontStyle='italic';}" required>
 
         <button type="submit">Envoyer</button>
     </form>
 </div>
 
-<h2 style="text-align:center; margin-top: 30px;">Messages :</h2>
+<form method="GET" id="filtreForm" style="max-width: 600px; margin: 20px auto; display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+    
+    <!-- Filtre utilisateur -->
+    <div style="display: flex; align-items: center; gap: 5px;">
+        <label for="utilisateur"></label>
+        <select name="utilisateur" id="utilisateur" style="padding: 5px;">
+            <option value="">-- Tous --</option>
+            {% for user in users %}
+                <option value="{{ user }}" {% if request.args.get('utilisateur') == user %}selected{% endif %}>{{ user }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Filtre 24h -->
+    <!--<div style="display: flex; align-items: center; gap: 5px;">
+        <label for="recent">24h :</label>
+        <input type="checkbox" name="recent" id="recent" value="1" {% if request.args.get('recent') == '1' %}checked{% endif %}>
+    </div>-->
+</form>
+
+<script>
+    document.getElementById('utilisateur').addEventListener('change', function() {
+        document.getElementById('filtreForm').submit();
+    });
+
+    document.getElementById('recent').addEventListener('change', function() {
+        document.getElementById('filtreForm').submit();
+    });
+</script>
+
+
+
+
 
 <div style="max-width: 800px; margin: 0 auto;">
     {% for username, status, msg, machine, timestamp in messages %}
         <div class="message">
             <strong>{{ machine }}</strong>
-            <span class="{{ 'statut-oper' if status == 'opérationnel' else 'statut-casse' }}">
+            <span class="{% if status == 'opérationnel' %}statut-oper{% elif status == 'cassé' %}statut-casse{% elif status == 'dégradé' %}statut-degrade{% else %}statut-inconnu{% endif %}">
                 [{{ status }}]
             </span><br>
             <strong>{{ username }}</strong> <em>{{ timestamp }}</em><br>

@@ -1,10 +1,11 @@
-from flask import render_template, request, redirect, url_for, Flask, session, flash
+from flask import render_template, request, redirect, url_for, session, flash
 from db import get_db_connection
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 from werkzeug.security import check_password_hash, generate_password_hash
+from flask_socketio import emit
 
-def init_routes(app):
+def init_routes(app, socketio):
 
     @app.route("/", methods=["GET", "POST"])
     def chat():
@@ -19,22 +20,43 @@ def init_routes(app):
 
             conn = get_db_connection()
             c = conn.cursor()
-            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (?, ?, ?, ?, ?)",
+            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (%s, %s, %s, %s, %s)",
                       (username, status, message, machine, timestamp))
             conn.commit()
             conn.close()
             return redirect("/")
+        
+        
+        utilisateur = request.args.get('utilisateur')
+        recent = request.args.get('recent')
+
+        query = "SELECT username, status, message, machine, timestamp FROM messages WHERE 1=1"
+        params = []
+
+        if utilisateur:
+            query += " AND username = %s"
+            params.append(utilisateur)
+
+        if recent == "1":
+            query += " AND timestamp >= datetime('now', '-1 day')"
+
+        query += " ORDER BY id DESC"
 
         conn = get_db_connection()
         c = conn.cursor()
-        c.execute("SELECT username, status, message, machine, timestamp FROM messages ORDER BY id DESC")
+        c.execute(query, params)
         messages = c.fetchall()
 
         c.execute("SELECT name FROM channels")
         machines = [row["name"] for row in c.fetchall()]
+
+        c.execute("SELECT DISTINCT username FROM messages")
+        users = [row["username"] for row in c.fetchall()]
         conn.close()
 
-        return render_template("chat.html", messages=messages, machines=machines, title="Messagerie")
+        
+
+        return render_template("chat.html", messages=messages, machines=machines, users= users, title="Messagerie")
 
 
     @app.route("/canaux", methods=["GET", "POST"])
@@ -48,18 +70,18 @@ def init_routes(app):
             action = request.form["action"]
             if action == "add":
                 try:
-                    c.execute("INSERT INTO channels (name) VALUES (?)", (name,))
+                    c.execute("INSERT INTO channels (name) VALUES (%s)", (name,))
                 except Exception:
                     pass
             elif action == "delete":
-                c.execute("DELETE FROM channels WHERE name = ?", (name,))
+                c.execute("DELETE FROM channels WHERE name = %s", (name,))
             conn.commit()
 
         c.execute("SELECT name FROM channels ORDER BY name ASC")
         channel_names = [row["name"] for row in c.fetchall()]
         channels = []
         for name in channel_names:
-            c.execute("SELECT message, status FROM messages WHERE machine LIKE ? ORDER BY id DESC LIMIT 1", (name,))
+            c.execute("SELECT message, status FROM messages WHERE machine LIKE %s ORDER BY id DESC LIMIT 1", (name,))
             result = c.fetchone()
             last_message = result["message"] if result else None
             last_status = result["status"] if result else None
@@ -82,7 +104,7 @@ def init_routes(app):
 
             conn = get_db_connection()
             c = conn.cursor()
-            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (?, ?, ?, ?, ?)",
+            c.execute("INSERT INTO messages (username, status, message, machine, timestamp) VALUES (%s, %s, %s, %s, %s)",
                       (username, status, message, machine, timestamp))
             conn.commit()
             conn.close()
@@ -90,7 +112,7 @@ def init_routes(app):
 
         conn = get_db_connection()
         c = conn.cursor()
-        c.execute("SELECT username, status, message, machine, timestamp FROM messages WHERE machine LIKE ? ORDER BY id DESC", (nom,))
+        c.execute("SELECT username, status, message, machine, timestamp FROM messages WHERE machine LIKE %s ORDER BY id DESC", (nom,))
         messages = c.fetchall()
         conn.close()
         return render_template("canal.html", canal=nom, messages=messages, title = nom)
@@ -103,7 +125,7 @@ def init_routes(app):
 
             with sqlite3.connect("messages.db") as conn:
                 c = conn.cursor()
-                c.execute("SELECT password, role FROM users WHERE username = ?", (username,))
+                c.execute("SELECT password, role FROM users WHERE username = %s", (username,))
                 result = c.fetchone()
 
                 if result and check_password_hash(result[0], password):
@@ -128,7 +150,7 @@ def init_routes(app):
                 return redirect(url_for("login"))
             
             c = conn.cursor()
-            c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
+            c.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT)")
             
             # Ajouter un utilisateur
             if request.method == "POST":
@@ -139,14 +161,14 @@ def init_routes(app):
                     hashed_password = generate_password_hash(password)
                     role = request.form.get("role", "user")
                     try:
-                        c.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, hashed_password, role))
+                        c.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", (username, hashed_password, role))
                         conn.commit()
                         flash("Utilisateur ajouté", "success")
                     except sqlite3.IntegrityError:
                         flash("Nom d'utilisateur déjà utilisé", "error")
                 elif action == "delete":
                     username = request.form["username"]
-                    c.execute("DELETE FROM users WHERE username = ?", (username,))
+                    c.execute("DELETE FROM users WHERE username = %s", (username,))
                     conn.commit()
                     flash(f"Utilisateur {username} supprimé", "success")
 
@@ -155,3 +177,8 @@ def init_routes(app):
             utilisateurs = c.fetchall()
 
         return render_template("utilisateurs.html", utilisateurs=utilisateurs, title = "Utilisateurs")
+    
+
+    @socketio.on('new_message')
+    def handle_new_message(data):
+        emit('message_received', data, broadcast=True)

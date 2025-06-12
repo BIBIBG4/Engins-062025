@@ -34,3 +34,11 @@ def get_db_connection():
     conn = sqlite3.connect("messages.db")
     conn.row_factory = sqlite3.Row
     return conn
+
+# import psycopg2
+# import os
+
+# def get_db_connection():
+#     conn = psycopg2.connect(os.environ['DATABASE_URL'])
+#     return conn
+

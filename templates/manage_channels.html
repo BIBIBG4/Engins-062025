@@ -8,11 +8,19 @@
             padding: 0;
         }
 
-        form input[type="text"], form button {
+        form input[type="text"] {
             width: 100%;
             max-width: 400px;
             padding: 10px;
             margin-bottom: 10px;
+        }
+
+        form button {
+            padding: 6px 10px;
+            font-size: 1em;
+            width: fit-content;
+            min-width: 30px;
+            margin-left: 5px;
         }
 
         .channel {
@@ -27,6 +35,10 @@
             color: green;
         }
 
+        .status-degrade {
+            color: rgb(255, 115, 0);
+        }
+
         .status-casse {
             color: red;
         }
@@ -39,6 +51,12 @@
 
         .title-casse {
             background-color: #f8d7da;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .title-degrade {
+            background-color: #ffcda5;
             padding: 4px 8px;
             border-radius: 4px;
         }
@@ -98,25 +116,41 @@
         <li class="channel">
             <strong>
                 <a href="/canal/{{ channel['name'] }}"
-                   class="{% if channel.get('last_status') == 'opérationnel' %}title-oper{% else %}title-casse{% endif %}">
-                   {{ channel['name'] }}
+                class="{% if channel.get('last_status') == 'opérationnel' %}
+                            title-oper
+                        {% elif channel.get('last_status') == 'cassé' %}
+                            title-casse
+                        {% elif channel.get('last_status') == 'dégradé' %}
+                            title-degrade
+                        {% else %}
+                            title-inconnu
+                        {% endif %}">
+                {{ channel['name'] }}
                 </a>
             </strong> -
-            <span class="{{ 'status-oper' if channel.get('last_status') == 'opérationnel' else 'status-casse' }}">
+            <span class="{% if channel.get('last_status') == 'opérationnel' %}
+                            status-oper
+                        {% elif channel.get('last_status') == 'cassé' %}
+                            status-casse
+                        {% elif channel.get('last_status') == 'dégradé' %}
+                            status-degrade
+                        {% else %}
+                            status-inconnu
+                        {% endif %}">
                 {{ channel.get('last_status', 'Aucun') }}
-            </span>
-            </strong> -
+            </span> -
             <span class="message-preview">
                 {{ channel.get('last_message', 'Aucun') }}
             </span>
-            
+
             {% if session.get('role') == 'admin' %}
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="channel_name" value="{{ channel['name'] }}">
-                <button type="submit" name="action" value="delete">🗑️ Supprimer</button>
+                <button type="submit" name="action" value="delete">🗑️</button>
             </form>
             {% endif %}
         </li>
+
     {% endfor %}
     </ul>
 </body>
