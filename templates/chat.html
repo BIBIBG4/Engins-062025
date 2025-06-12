@@ -86,6 +86,14 @@
         font-size: 1em;
     }
 
+    .button-supprimer {
+        background: none;
+        border: none;
+        color: grey;
+        font-size: 0.9em;
+        cursor: pointer;
+    }
+
 
     @media (max-width: 768px) {
         .form-container {
@@ -124,7 +132,7 @@
             style="font-style: italic; color: #aaa;" 
             onfocus="this.style.color='#000'; this.style.fontStyle='normal';" 
             onblur="if(this.value==''){this.style.color='#aaa'; this.style.fontStyle='italic';}" required>
-
+            <input type="hidden" name="action" value="add">
         <button type="submit">Envoyer</button>
     </form>
 </div>
@@ -164,14 +172,24 @@
 
 
 <div style="max-width: 800px; margin: 0 auto;">
-    {% for username, status, msg, machine, timestamp in messages %}
-        <div class="message">
-            <strong>{{ machine }}</strong>
-            <span class="{% if status == 'opérationnel' %}statut-oper{% elif status == 'cassé' %}statut-casse{% elif status == 'dégradé' %}statut-degrade{% else %}statut-inconnu{% endif %}">
-                [{{ status }}]
-            </span><br>
-            <strong>{{ username }}</strong> <em>{{ timestamp }}</em><br>
-            {{ msg }}
+    {% for message in messages %}
+        <div class="message" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex-grow: 1;">
+                <strong>{{ message.machine }}</strong>
+                <span class="{% if message.status == 'opérationnel' %}statut-oper{% elif message.status == 'cassé' %}statut-casse{% elif message.status == 'dégradé' %}statut-degrade{% else %}statut-inconnu{% endif %}">
+                    [{{ message.status }}]
+                </span><br>
+                <strong>{{ message.username }}</strong> <em>{{ message.timestamp }}</em><br>
+                {{ message.message }}
+            </div>
+
+            {% if session.get('role') == 'admin' %}
+            <form method="POST" style="margin-left: 10px;">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="message_id" value="{{ message.id }}">
+                <button type="submit" class="button-supprimer" title="Supprimer">🗑️</button>
+            </form>
+            {% endif %}
         </div>
     {% endfor %}
 </div>

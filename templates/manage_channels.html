@@ -86,6 +86,14 @@
             vertical-align: middle;
         }
 
+        .button-supprimer {
+            background: none;
+            border: none;
+            color: grey;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
         @media (max-width: 600px) {
             body {
                 margin: 10px;
@@ -113,43 +121,46 @@
 
     <ul>
     {% for channel in channels %}
-        <li class="channel">
-            <strong>
-                <a href="/canal/{{ channel['name'] }}"
-                class="{% if channel.get('last_status') == 'opérationnel' %}
-                            title-oper
-                        {% elif channel.get('last_status') == 'cassé' %}
-                            title-casse
-                        {% elif channel.get('last_status') == 'dégradé' %}
-                            title-degrade
-                        {% else %}
-                            title-inconnu
-                        {% endif %}">
-                {{ channel['name'] }}
-                </a>
-            </strong> -
-            <span class="{% if channel.get('last_status') == 'opérationnel' %}
-                            status-oper
-                        {% elif channel.get('last_status') == 'cassé' %}
-                            status-casse
-                        {% elif channel.get('last_status') == 'dégradé' %}
-                            status-degrade
-                        {% else %}
-                            status-inconnu
-                        {% endif %}">
-                {{ channel.get('last_status', 'Aucun') }}
-            </span> -
-            <span class="message-preview">
-                {{ channel.get('last_message', 'Aucun') }}
-            </span>
+        <li class="channel" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex-grow: 1;">
+                <strong>
+                    <a href="/canal/{{ channel['name'] }}"
+                    class="{% if channel.get('last_status') == 'opérationnel' %}
+                                title-oper
+                            {% elif channel.get('last_status') == 'cassé' %}
+                                title-casse
+                            {% elif channel.get('last_status') == 'dégradé' %}
+                                title-degrade
+                            {% else %}
+                                title-inconnu
+                            {% endif %}">
+                    {{ channel['name'] }}
+                    </a>
+                </strong> -
+                <span class="{% if channel.get('last_status') == 'opérationnel' %}
+                                status-oper
+                            {% elif channel.get('last_status') == 'cassé' %}
+                                status-casse
+                            {% elif channel.get('last_status') == 'dégradé' %}
+                                status-degrade
+                            {% else %}
+                                status-inconnu
+                            {% endif %}">
+                    {{ channel.get('last_status', 'Aucun') }}
+                </span> -
+                <span class="message-preview">
+                    {{ channel.get('last_message', 'Aucun') }}
+                </span>
+            </div>
 
             {% if session.get('role') == 'admin' %}
-            <form method="POST" style="display:inline;">
+            <form method="POST" style="margin-left: 10px;">
                 <input type="hidden" name="channel_name" value="{{ channel['name'] }}">
-                <button type="submit" name="action" value="delete">🗑️</button>
+                <button type="submit" name="action" value="delete" class="button-supprimer" title="Supprimer">🗑️</button>
             </form>
             {% endif %}
         </li>
+
 
     {% endfor %}
     </ul>

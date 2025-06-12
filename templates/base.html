@@ -9,10 +9,6 @@
 <body>
     <header>
         <h1>{{ title or "Application" }}</h1>
-        <div style="position: absolute; right: 10px; font-size: 0.9em;">
-        {% if session.get('username') %}
-            {{ session['username'] }} ({{ session['role'] }})
-        {% endif %}
     </div>
     </header>
 
